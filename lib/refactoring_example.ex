@@ -34,6 +34,12 @@ defmodule RefactoringExample do
         sellers_notes: sellers_notes
       }
     end)
+    |> output_listings()
+  end
+
+  @spec output_listings([Listing.t()]) :: :ok
+  defp output_listings(listings) when is_list(listings) do
+    listings
     |> Enum.map(fn listing ->
       [
         "Title: #{listing.title}",
