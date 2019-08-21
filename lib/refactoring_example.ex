@@ -14,18 +14,11 @@ defmodule RefactoringExample do
 
   @spec get_listings() :: [Listing.t()]
   defp get_listings do
-    url = "https://www.cars.com/shopping/sedan/"
-    {:ok, %Response{status_code: 200, body: body}} = HTTPoison.get(url)
-
-    body
-    |> Floki.find(".shop-srp-listings__listing")
-    |> Enum.map(fn listing_html ->
-      path = Floki.attribute(listing_html, "href") |> List.first()
-      url = "http://www.cars.com#{path}"
-      title = Floki.find(listing_html, ".listing-row__title") |> Floki.text() |> String.trim()
-
+    "sedan"
+    |> get_listing_summaries()
+    |> Enum.map(fn %{title: title, detail_page_url: detail_page_url} ->
       {:ok, %Response{status_code: 200, body: vehicle_html}} =
-        HTTPoison.get(url, [], follow_redirect: true)
+        HTTPoison.get(detail_page_url, [], follow_redirect: true)
 
       sellers_notes =
         vehicle_html
@@ -35,7 +28,7 @@ defmodule RefactoringExample do
         |> String.replace_leading("Seller's Notes", "")
 
       %Listing{
-        url: url,
+        url: detail_page_url,
         title: title,
         sellers_notes: sellers_notes
       }
@@ -57,5 +50,25 @@ defmodule RefactoringExample do
     |> Enum.intersperse("\n-----\n")
     |> List.flatten()
     |> Enum.each(&IO.puts/1)
+  end
+
+  @spec get_listing_summaries(String.t()) :: [%{title: String.t(), detail_page_url: String.t()}]
+  defp get_listing_summaries(body_style) do
+    url = "https://www.cars.com/shopping/#{body_style}/"
+    {:ok, %Response{status_code: 200, body: body}} = HTTPoison.get(url)
+
+    body
+    |> Floki.find(".shop-srp-listings__listing")
+    |> Enum.map(fn listing_html ->
+      detail_page_url =
+        listing_html
+        |> Floki.attribute("href")
+        |> List.first()
+        |> (&Kernel.<>("http://www.cars.com", &1)).()
+
+      title = Floki.find(listing_html, ".listing-row__title") |> Floki.text() |> String.trim()
+
+      %{detail_page_url: detail_page_url, title: title}
+    end)
   end
 end
