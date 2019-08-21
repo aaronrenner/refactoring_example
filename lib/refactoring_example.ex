@@ -17,15 +17,7 @@ defmodule RefactoringExample do
     "sedan"
     |> get_listing_summaries()
     |> Enum.map(fn %{title: title, detail_page_url: detail_page_url} ->
-      {:ok, %Response{status_code: 200, body: vehicle_html}} =
-        HTTPoison.get(detail_page_url, [], follow_redirect: true)
-
-      sellers_notes =
-        vehicle_html
-        |> Floki.find(".details-section__seller-notes")
-        |> Floki.text()
-        |> String.trim()
-        |> String.replace_leading("Seller's Notes", "")
+      sellers_notes = get_sellers_notes(detail_page_url)
 
       %Listing{
         url: detail_page_url,
@@ -70,5 +62,17 @@ defmodule RefactoringExample do
 
       %{detail_page_url: detail_page_url, title: title}
     end)
+  end
+
+  @spec get_sellers_notes(String.t()) :: String.t()
+  defp get_sellers_notes(detail_page_url) do
+    {:ok, %Response{status_code: 200, body: vehicle_html}} =
+      HTTPoison.get(detail_page_url, [], follow_redirect: true)
+
+    vehicle_html
+    |> Floki.find(".details-section__seller-notes")
+    |> Floki.text()
+    |> String.trim()
+    |> String.replace_leading("Seller's Notes", "")
   end
 end
