@@ -8,6 +8,12 @@ defmodule RefactoringExample do
 
   @spec print_cars :: :ok
   def print_cars do
+    get_listings()
+    |> output_listings()
+  end
+
+  @spec get_listings() :: [Listing.t()]
+  defp get_listings do
     url = "https://www.cars.com/shopping/sedan/"
     {:ok, %Response{status_code: 200, body: body}} = HTTPoison.get(url)
 
@@ -34,7 +40,6 @@ defmodule RefactoringExample do
         sellers_notes: sellers_notes
       }
     end)
-    |> output_listings()
   end
 
   @spec output_listings([Listing.t()]) :: :ok
